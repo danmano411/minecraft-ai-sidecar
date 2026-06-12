@@ -1,0 +1,4 @@
+{
+  "version": "0.2",
+  "words": ["ollama", "groq", "nomic", "chromadb", "chroma", "tavily", "uvicorn", "pydantic", "fastapi", "llama", "langchain", "metas", "metadatas", "upsert"]
+}
