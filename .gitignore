@@ -18,3 +18,9 @@ data/
 # Logs
 *.log
 logs/
+
+# Local scripts
+export_session.py
+
+# Session exports
+sessions/

@@ -31,12 +31,18 @@ from multiple knowledge agents and must produce a single, cohesive response.
 Rules:
 1. Prefer information from higher-authority sources (official docs > wiki > community).
 2. Reconcile conflicts by citing the authoritative source explicitly.
-3. Write the full answer in clear prose — detailed enough to actually help.
-4. Write the HUD answer as 1–2 tight sentences (max ~120 chars) for an in-game
-   text overlay. No formatting, no bullet points in the HUD answer.
+3. Write the full_answer in clear, complete prose. If the context contains a list
+   (enchantments on a weapon, mob drops, brewing steps, biome features) cover ALL
+   items — do not stop at the first or most prominent one and go into depth on only
+   that. Be thorough: enumerate everything the context provides.
+4. Write the hud_answer as 3–5 natural sentences (~300–400 chars). Translate any
+   raw numbers or game values into plain English (e.g. "restores 2 hearts" not
+   "heals 4 HP"). No bullet points, no markdown, no JSON — plain prose only.
+   Do not start the hud_answer with a JSON brace.
 5. Generate up to 3 natural follow-up questions the player might ask next.
 
-Respond with ONLY valid JSON — no prose, no markdown fences:
+CRITICAL — output format: your ENTIRE response must be one valid JSON object and
+nothing else. No text before it, no text after it, no markdown fences.
 {"full_answer": "...", "hud_answer": "...", "follow_up_hints": ["...", "...", "..."]}
 """
 
@@ -105,10 +111,31 @@ async def run(question: str, intent_result: IntentResult) -> QueryResponse:
             raw = raw[4:]
     raw = raw.strip()
 
-    try:
-        data = json.loads(raw)
-    except json.JSONDecodeError:
-        data = {"full_answer": raw, "hud_answer": raw[:120], "follow_up_hints": []}
+    def _try_parse(s: str) -> dict:
+        try:
+            return json.loads(s)
+        except json.JSONDecodeError:
+            return {}
+
+    data = _try_parse(raw)
+    if not data:
+        # Model added preamble — extract the outermost {...} block
+        start, end = raw.find("{"), raw.rfind("}")
+        if start != -1 and end > start:
+            data = _try_parse(raw[start:end + 1])
+    if not data:
+        data = {"full_answer": raw, "hud_answer": raw[:500], "follow_up_hints": []}
+
+    # If full_answer itself is a JSON string (model double-nested), unwrap it
+    fa = data.get("full_answer", "")
+    if isinstance(fa, str) and fa.strip().startswith("{"):
+        inner = _try_parse(fa.strip())
+        if inner.get("full_answer"):
+            data = inner
+
+    # If hud_answer is still missing or empty, derive from full_answer
+    if not data.get("hud_answer", "").strip():
+        data["hud_answer"] = data.get("full_answer", "")[:500]
 
     all_sources: list[Source] = []
     seen: set[str] = set()
@@ -121,7 +148,7 @@ async def run(question: str, intent_result: IntentResult) -> QueryResponse:
 
     return QueryResponse(
         full_answer=data.get("full_answer", ""),
-        hud_answer=data.get("hud_answer", "")[:200],
+        hud_answer=data.get("hud_answer", "")[:600],
         follow_up_hints=data.get("follow_up_hints", [])[:3],
         intent=intent_result.intent,
         sources=all_sources,

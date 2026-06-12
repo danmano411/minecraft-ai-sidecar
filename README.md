@@ -60,8 +60,8 @@ Embeddings are stored locally in ChromaDB at `data/chroma/`. The build pipeline 
 
 - Python 3.12+
 - [Ollama](https://ollama.ai) running locally (for local LLM + embedding backends)
-  - `ollama pull llama3.2:3b` — default LLM
-  - `ollama pull nomic-embed-text` — default embedding model
+  - `ollama pull llama3.1:8b` — recommended LLM (~4.7 GB)
+  - `ollama pull nomic-embed-text` — embedding model (~274 MB)
 
 Or, configure cloud backends via `.env` (Anthropic, OpenAI, Groq).
 
@@ -85,7 +85,7 @@ Create a `.env` file in the project root. All fields are optional — defaults w
 ```env
 # LLM backend: "anthropic" | "ollama" | "groq"
 LLM_BACKEND=ollama
-LLM_MODEL=llama3.2:3b
+LLM_MODEL=llama3.1:8b
 OLLAMA_BASE_URL=http://localhost:11434/v1
 
 # Embedding backend: "openai" | "ollama"

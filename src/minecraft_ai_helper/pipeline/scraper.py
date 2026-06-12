@@ -18,16 +18,39 @@ import httpx
 from minecraft_ai_helper.config import settings
 
 SCRAPE_CATEGORIES: list[str] = [
+    # Items & Blocks (were correct originally)
     "Items",
     "Blocks",
-    "Mobs",
-    "Biomes",
+    # Mobs (original "Mobs" category returns drop items, not mob articles)
+    "Hostile_mobs",
+    "Passive_mobs",
+    "Neutral_mobs",
+    "Boss_mobs",
+    "Undead_mobs",
+    "Aquatic_mobs",
+    "Nether_mobs",
+    "End_mobs",
+    # Enchantments (was correct originally)
     "Enchantments",
-    "Status_effects",
-    "Game_mechanics",
-    "Crafting",
-    "Brewing",
-    "Structures",
+    # Combat mechanics
+    "Combat",
+    # Status effects (original "Status_effects" was wrong)
+    "Effects",
+    # Potions & Brewing (original "Brewing" missed most potion articles)
+    "Potions",
+    # Biomes (original "Biomes" was wrong)
+    "Overworld_biomes",
+    "Nether_biomes",
+    "End_biomes",
+    # Structures (original "Structures" was wrong)
+    "Generated_structures",
+    "Illager_structures",
+    "Villager_structures",
+    # Gameplay mechanics (original "Game_mechanics" returned 0 pages)
+    "Gameplay",
+    # Additional coverage
+    "Dimensions",
+    "Redstone_mechanics",
 ]
 
 

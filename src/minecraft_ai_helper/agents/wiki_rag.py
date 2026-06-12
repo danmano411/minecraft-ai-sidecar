@@ -57,7 +57,20 @@ async def run(question: str, search_query: str) -> AgentResult:
     t_start = time.perf_counter()
 
     embedding = await asyncio.to_thread(embed_query, search_query)
-    chunks = await asyncio.to_thread(query_collection, embedding)
+
+    # Fetch a wider pool then cap per page to maximise source diversity.
+    # e.g. for "sword enchantments" this surfaces Sword + Sharpness + Mending +
+    # Unbreaking + Fire Aspect instead of 8 chunks all from the top-scoring page.
+    _POOL = 24
+    _MAX_PER_PAGE = 3
+    raw_chunks = await asyncio.to_thread(query_collection, embedding, top_k=_POOL)
+    page_counts: dict[str, int] = {}
+    chunks: list[dict] = []
+    for c in raw_chunks:
+        pt = c["page_title"]
+        if page_counts.get(pt, 0) < _MAX_PER_PAGE:
+            chunks.append(c)
+            page_counts[pt] = page_counts.get(pt, 0) + 1
 
     log.info("wiki_rag | embed+retrieve: %.1fs", time.perf_counter() - t_start)
 
@@ -72,7 +85,7 @@ async def run(question: str, search_query: str) -> AgentResult:
 
     # ── Gate 1: retrieval floor ───────────────────────────────────────────────
     best_score = max(c["score"] for c in chunks)
-    top_titles = ", ".join(c["page_title"] for c in chunks[:3])
+    top_titles = ", ".join(dict.fromkeys(c["page_title"] for c in chunks[:6]))
     log.info(
         "wiki_rag | %d chunks — best=%.3f  top pages: %s",
         len(chunks), best_score, top_titles,
